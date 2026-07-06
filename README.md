@@ -70,6 +70,7 @@ curl -X POST http://localhost:8080/api/v1/calculations \
 | `INVALID_OPERAND_COUNT` | wrong number of operands (all four ops are strictly binary) | 400 |
 | `INVALID_NUMBER` | an operand string isn't a parseable number | 400 |
 | `DIVISION_BY_ZERO` | denominator is `0` | 400 |
+| `NEGATIVE_SQRT` | `sqrt` operand is negative | 400 |
 | `RESULT_OUT_OF_RANGE` | result overflows to `±Inf`/`NaN` | 400 |
 | `INTERNAL_ERROR` | anything unexpected | 500 |
 
@@ -78,6 +79,32 @@ curl -X POST http://localhost:8080/api/v1/calculations \
   -H 'Content-Type: application/json' \
   -d '{"expression": {"/": ["5", "0"]}}'
 # {"error":{"code":"DIVISION_BY_ZERO","message":"division by zero"}}
+```
+
+**Optional operations — exponentiation (`^`), square root (`sqrt`), percentage (`%`):**
+
+`sqrt` and `%` are unary — their operand array holds exactly one element.
+
+```bash
+curl -X POST http://localhost:8080/api/v1/calculations \
+  -H 'Content-Type: application/json' \
+  -d '{"expression": {"^": ["2", "10"]}}'
+# {"result":"1024"}
+
+curl -X POST http://localhost:8080/api/v1/calculations \
+  -H 'Content-Type: application/json' \
+  -d '{"expression": {"sqrt": ["9"]}}'
+# {"result":"3"}
+
+curl -X POST http://localhost:8080/api/v1/calculations \
+  -H 'Content-Type: application/json' \
+  -d '{"expression": {"%": ["50"]}}'
+# {"result":"0.5"}
+
+curl -X POST http://localhost:8080/api/v1/calculations \
+  -H 'Content-Type: application/json' \
+  -d '{"expression": {"sqrt": ["-4"]}}'
+# {"error":{"code":"NEGATIVE_SQRT","message":"cannot take the square root of a negative number"}}
 ```
 
 `GET /healthz` returns `200 OK` with no body — used by container orchestration to detect backend readiness, not part of the calculator domain itself.
@@ -92,7 +119,7 @@ make test    # go test ./...
 make cover   # generates coverage.out + coverage.html
 ```
 
-51 tests across unit level (`internal/expression`: the `Node` JSON unmarshaling and the operator-registry evaluator; `internal/api/handler`: HTTP binding in isolation) and **integration level** (`internal/api/router_integration_test.go`: the real `NewRouter()` wired up behind a real `httptest.Server`, hit with a real `net/http.Client` — proving routing + middleware + binding + evaluation work together, not just the handler function in isolation). Current coverage: **94.2%** statements.
+76 tests across unit level (`internal/expression`: the `Node` JSON unmarshaling and the operator-registry evaluator, including `^`/`sqrt`/`%`; `internal/api/handler`: HTTP binding in isolation) and **integration level** (`internal/api/router_integration_test.go`: the real `NewRouter()` wired up behind a real `httptest.Server`, hit with a real `net/http.Client` — proving routing + middleware + binding + evaluation work together, not just the handler function in isolation, including happy-path and error-path coverage for `^`/`sqrt`/`%`). Current coverage: **94.9%** statements.
 
 ### Frontend (React)
 
@@ -128,3 +155,5 @@ For fast iteration while writing specs, you can instead run it locally (requires
 - **Distroless runtime image for the backend** (`gcr.io/distroless/static-debian12`), which has no shell. The e2e container's readiness check therefore polls from *outside* (`wait-on` in the `e2e` container hitting `/healthz`) rather than via a Compose `healthcheck:` that would need a shell inside the backend image.
 - **`/healthz` answers both `GET` and `HEAD`.** `wait-on`'s default check for a plain `http://` target is a `HEAD` request; Gin doesn't implicitly answer `HEAD` for a route only registered via `.GET()`. Without this, the readiness probe 404'd forever and the containerized e2e run never started. The e2e Dockerfile also pins `wait-on` to the explicit `http-get://` scheme (forcing `GET`) and a bounded timeout, so a genuine future readiness failure fails fast with a clear error instead of hanging the whole `docker compose` run indefinitely.
 - **e2e image is a slim Node base + `playwright install chromium` only**, not the official `mcr.microsoft.com/playwright` image. That image ships Chromium *and* Firefox *and* WebKit plus all their OS deps/fonts (multiple GB) — since the suite only ever runs the default (Chromium) project, that was several GB of dead weight that made a cold pull painfully slow. The slim build is roughly two orders of magnitude smaller to pull/build the first time.
+- **Percentage is a simple unary transform (`x -> x/100`), not a relative-to-previous-operand percentage.** Some calculators make `12 + 5%` mean `12 + (12 * 0.05)`; here `%` only ever sees and transforms the single number it was invoked on (`{"%": ["50"]}` → `0.5`), matching its `MinArity: 1, MaxArity: 1` registry entry. This keeps `%` structurally identical to `sqrt` (both unary, both independent of any other pending operand) rather than requiring the evaluator or the frontend's expression builder to special-case a "percent relative to X" tree shape.
+- **Negative `sqrt` gets its own `NEGATIVE_SQRT` error code instead of falling through to `RESULT_OUT_OF_RANGE`.** `math.Sqrt` of a negative number returns `NaN`, which the evaluator's generic post-op `IsInf`/`IsNaN` check would otherwise catch as the same generic "not a finite number" error used for overflow. Since a negative radicand is a well-understood, distinct failure mode (not a numeric-range problem), it's raised explicitly and inline in `sqrt`'s own `Eval` closure — same convention as `DIVISION_BY_ZERO` in `/`'s closure — so API consumers can tell the two situations apart.

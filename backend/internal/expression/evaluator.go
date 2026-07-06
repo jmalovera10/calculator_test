@@ -55,6 +55,23 @@ var registry = map[string]Operator{
 			return o[0] / o[1], nil
 		},
 	},
+	"^": {
+		Symbol: "^", MinArity: 2, MaxArity: 2,
+		Eval: func(o []float64) (float64, error) { return math.Pow(o[0], o[1]), nil },
+	},
+	"sqrt": {
+		Symbol: "sqrt", MinArity: 1, MaxArity: 1,
+		Eval: func(o []float64) (float64, error) {
+			if o[0] < 0 {
+				return 0, &EvalError{Code: "NEGATIVE_SQRT", Message: "cannot take the square root of a negative number"}
+			}
+			return math.Sqrt(o[0]), nil
+		},
+	},
+	"%": {
+		Symbol: "%", MinArity: 1, MaxArity: 1,
+		Eval: func(o []float64) (float64, error) { return o[0] / 100, nil },
+	},
 }
 
 // Evaluate recursively evaluates an expression tree, returning the numeric

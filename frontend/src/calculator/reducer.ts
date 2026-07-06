@@ -76,6 +76,22 @@ export function reducer(state: CalculatorState, action: Action): CalculatorState
       }
     case 'EVAL_ERROR':
       return { ...state, isLoading: false, error: { code: action.code, message: action.message } }
+    case 'UNARY_EVAL_SUCCESS': {
+      // A unary op (√, %) only transforms currentOperand — unlike EVAL_SUCCESS,
+      // it must not clear a pending (previousOperand, operator) chain, otherwise
+      // e.g. "12 + 9 √" would lose the "12 +" context. hasFreshResult is only
+      // set when there's no pending chain, so it behaves like a normal finished
+      // result (replace-on-next-digit) in the standalone case.
+      const isStandalone = state.previousOperand === null && state.operator === null
+      return {
+        ...state,
+        currentOperand: action.result,
+        result: isStandalone ? action.result : state.result,
+        hasFreshResult: isStandalone,
+        isLoading: false,
+        error: null,
+      }
+    }
     default:
       return state
   }

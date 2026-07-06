@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildExpressionTree } from './buildExpressionTree'
+import { buildExpressionTree, buildUnaryExpressionTree } from './buildExpressionTree'
 
 describe('buildExpressionTree', () => {
   it('builds an addition node', () => {
@@ -16,5 +16,19 @@ describe('buildExpressionTree', () => {
 
   it('builds a division node', () => {
     expect(buildExpressionTree('9', '/', '0')).toEqual({ '/': ['9', '0'] })
+  })
+
+  it('builds an exponentiation node', () => {
+    expect(buildExpressionTree('2', '^', '10')).toEqual({ '^': ['2', '10'] })
+  })
+})
+
+describe('buildUnaryExpressionTree', () => {
+  it('builds a sqrt node', () => {
+    expect(buildUnaryExpressionTree('sqrt', '9')).toEqual({ sqrt: ['9'] })
+  })
+
+  it('builds a percent node', () => {
+    expect(buildUnaryExpressionTree('%', '50')).toEqual({ '%': ['50'] })
   })
 })

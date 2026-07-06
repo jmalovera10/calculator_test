@@ -37,4 +37,35 @@ Adjustments: There must be integration tests to evaluate end to end for happy pa
 
 ---
 
- Also there must be a way to establish precedence between operands, so the multiplication or division takes precedence over sum and the terms within parenthesis must take precedence from other terms. Nested parenthesis must be resolved in their hierarchy, having a higher level of precedence
+/code-review bear in mind the criteria specified in the objective docs
+
+--
+
+Apply suggestions having as acceptance criteria what is established in the objectives documentation
+
+-- 
+
+/compact
+
+--
+
+/plan Based on the implementation made, we are ready to extend functionality to the optional operations of @docs/objective.spec.md. Be sure to implement them using the architecture already defined and add necessary unit testing to assert that the behavior is correct. For each operation have the following considerations:
+
+Square Root
+* Negative values are not allowed for a root value
+* It must be handled as a unary standalone operator since it affects the expression within
+  
+Percentage
+* It must be handled as a unary operator since it only affects the number before it
+* This must be evaluated with an equal sent or another operation
+
+This must be made on another plan document. Again, do not make assumptions and ask me for validation. 
+
+
+In the construction don't forget to include the integration tests
+
+---
+
+/code-review bear in mind the criteria specified in the objective docs
+
+--

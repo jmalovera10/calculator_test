@@ -1,9 +1,9 @@
 import { useCallback, useReducer } from 'react'
 import { evaluate } from '../api/client'
 import { ApiError } from '../api/types'
-import { buildExpressionTree } from './buildExpressionTree'
+import { buildExpressionTree, buildUnaryExpressionTree } from './buildExpressionTree'
 import { reducer } from './reducer'
-import type { Operator } from './types'
+import type { Operator, UnaryOperator } from './types'
 import { initialState } from './types'
 
 export function useCalculator() {
@@ -25,6 +25,17 @@ export function useCalculator() {
     },
     [],
   )
+
+  const runUnaryEvaluation = useCallback(async (operator: UnaryOperator, operand: string) => {
+    dispatch({ type: 'EVAL_START' })
+    try {
+      const result = await evaluate(buildUnaryExpressionTree(operator, operand))
+      dispatch({ type: 'UNARY_EVAL_SUCCESS', result })
+    } catch (err) {
+      const apiErr = err instanceof ApiError ? err : new ApiError('INTERNAL_ERROR', 'unexpected error')
+      dispatch({ type: 'EVAL_ERROR', code: apiErr.code, message: apiErr.message })
+    }
+  }, [])
 
   const pressDigit = useCallback((digit: string) => dispatch({ type: 'DIGIT', digit }), [])
   const pressDecimalPoint = useCallback(() => dispatch({ type: 'DECIMAL_POINT' }), [])
@@ -55,5 +66,14 @@ export function useCalculator() {
     void runEvaluation(state.previousOperand, state.operator, state.currentOperand)
   }, [state, runEvaluation])
 
-  return { state, pressDigit, pressDecimalPoint, pressOperator, pressEquals, pressClear }
+  const pressUnaryOperator = useCallback(
+    (operator: UnaryOperator) => {
+      if (state.isLoading) return
+      const operand = state.currentOperand === '' ? '0' : state.currentOperand
+      void runUnaryEvaluation(operator, operand)
+    },
+    [state, runUnaryEvaluation],
+  )
+
+  return { state, pressDigit, pressDecimalPoint, pressOperator, pressEquals, pressClear, pressUnaryOperator }
 }

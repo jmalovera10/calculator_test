@@ -85,6 +85,10 @@ func TestIntegration_HappyPath(t *testing.T) {
 		{"multiplication", `{"expression": {"*": ["6", "7"]}}`, "42"},
 		{"division", `{"expression": {"/": ["20", "4"]}}`, "5"},
 		{"nested expression", `{"expression": {"/": [{"+": ["5", "1"]}, "3"]}}`, "2"},
+		{"exponentiation", `{"expression": {"^": ["2", "10"]}}`, "1024"},
+		{"square root", `{"expression": {"sqrt": ["9"]}}`, "3"},
+		{"percentage", `{"expression": {"%": ["50"]}}`, "0.5"},
+		{"nested with sqrt", `{"expression": {"+": ["1", {"sqrt": ["16"]}]}}`, "5"},
 	}
 
 	for _, tc := range cases {
@@ -115,11 +119,15 @@ func TestIntegration_ErrorCases(t *testing.T) {
 	}{
 		{"malformed json", `{"expression": `, http.StatusBadRequest, "INVALID_JSON"},
 		{"missing expression field", `{}`, http.StatusBadRequest, "INVALID_JSON"},
-		{"unknown operator", `{"expression": {"^": ["2", "3"]}}`, http.StatusBadRequest, "UNKNOWN_OPERATOR"},
+		{"unknown operator", `{"expression": {"@": ["2", "3"]}}`, http.StatusBadRequest, "UNKNOWN_OPERATOR"},
 		{"wrong operand count", `{"expression": {"+": ["1"]}}`, http.StatusBadRequest, "INVALID_OPERAND_COUNT"},
 		{"unparsable number", `{"expression": {"+": ["abc", "1"]}}`, http.StatusBadRequest, "INVALID_NUMBER"},
 		{"division by zero", `{"expression": {"/": ["5", "0"]}}`, http.StatusBadRequest, "DIVISION_BY_ZERO"},
 		{"multi-key operator object", `{"expression": {"+": ["1","2"], "-": ["3","4"]}}`, http.StatusBadRequest, "INVALID_JSON"},
+		{"negative square root", `{"expression": {"sqrt": ["-4"]}}`, http.StatusBadRequest, "NEGATIVE_SQRT"},
+		{"sqrt wrong operand count", `{"expression": {"sqrt": ["4", "2"]}}`, http.StatusBadRequest, "INVALID_OPERAND_COUNT"},
+		{"percentage wrong operand count", `{"expression": {"%": ["1", "2"]}}`, http.StatusBadRequest, "INVALID_OPERAND_COUNT"},
+		{"exponentiation wrong operand count", `{"expression": {"^": ["2"]}}`, http.StatusBadRequest, "INVALID_OPERAND_COUNT"},
 	}
 
 	for _, tc := range cases {

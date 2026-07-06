@@ -28,7 +28,7 @@ Optional:
 * Clean, readable, and idiomatic code (frontend and backend)
 * Unit tests covering key functionality for both layers
 * Documentation: setup instructions, API usage, and design rationale
-* Optional: Dockerfile for full-stack deployment
+* Dockerfile for full-stack deployment
 
 ## Constraints
 * Frontend: React (TypeScript preferred)

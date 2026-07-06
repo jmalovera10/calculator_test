@@ -134,4 +134,29 @@ describe('reducer', () => {
       expect(state.hasFreshResult).toBe(false)
     })
   })
+
+  describe('UNARY_EVAL_SUCCESS', () => {
+    it('behaves like a finished result when there is no pending chain', () => {
+      const state = reducer(
+        { ...initialState, currentOperand: '9', isLoading: true },
+        { type: 'UNARY_EVAL_SUCCESS', result: '3' },
+      )
+      expect(state.currentOperand).toBe('3')
+      expect(state.result).toBe('3')
+      expect(state.hasFreshResult).toBe(true)
+      expect(state.isLoading).toBe(false)
+    })
+
+    it('preserves the pending previousOperand/operator when a binary chain is in progress', () => {
+      const state = reducer(
+        { ...initialState, previousOperand: '12', operator: '+', currentOperand: '9', isLoading: true },
+        { type: 'UNARY_EVAL_SUCCESS', result: '3' },
+      )
+      expect(state.currentOperand).toBe('3')
+      expect(state.previousOperand).toBe('12')
+      expect(state.operator).toBe('+')
+      expect(state.hasFreshResult).toBe(false)
+      expect(state.isLoading).toBe(false)
+    })
+  })
 })

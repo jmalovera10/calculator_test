@@ -24,6 +24,10 @@ func TestEvaluate_HappyPath(t *testing.T) {
 		{"negative result", op("-", lit("3"), lit("10")), -7},
 		{"nested: (5+1)/3", op("/", op("+", lit("5"), lit("1")), lit("3")), 2},
 		{"deeply nested", op("+", op("-", lit("1"), lit("2")), lit("3")), 2},
+		{"exponentiation", op("^", lit("2"), lit("10")), 1024},
+		{"square root", op("sqrt", lit("9")), 3},
+		{"percentage", op("%", lit("50")), 0.5},
+		{"nested: 1 + sqrt(16)", op("+", lit("1"), op("sqrt", lit("16"))), 5},
 	}
 
 	for _, tc := range cases {
@@ -45,14 +49,21 @@ func TestEvaluate_Errors(t *testing.T) {
 		node     Node
 		wantCode string
 	}{
-		{"unknown operator", op("^", lit("2"), lit("3")), "UNKNOWN_OPERATOR"},
+		{"unknown operator", op("@", lit("2"), lit("3")), "UNKNOWN_OPERATOR"},
 		{"too few operands", op("+", lit("1")), "INVALID_OPERAND_COUNT"},
 		{"too many operands", op("+", lit("1"), lit("2"), lit("3")), "INVALID_OPERAND_COUNT"},
 		{"zero operands", op("+"), "INVALID_OPERAND_COUNT"},
 		{"unparsable literal", op("+", lit("abc"), lit("1")), "INVALID_NUMBER"},
 		{"division by zero", op("/", lit("5"), lit("0")), "DIVISION_BY_ZERO"},
 		{"nested error propagates", op("+", op("/", lit("1"), lit("0")), lit("2")), "DIVISION_BY_ZERO"},
-		{"nested unknown operator propagates", op("+", lit("1"), op("^", lit("2"), lit("3"))), "UNKNOWN_OPERATOR"},
+		{"nested unknown operator propagates", op("+", lit("1"), op("@", lit("2"), lit("3"))), "UNKNOWN_OPERATOR"},
+		{"negative square root", op("sqrt", lit("-4")), "NEGATIVE_SQRT"},
+		{"sqrt zero operands", op("sqrt"), "INVALID_OPERAND_COUNT"},
+		{"sqrt too many operands", op("sqrt", lit("1"), lit("2")), "INVALID_OPERAND_COUNT"},
+		{"percentage zero operands", op("%"), "INVALID_OPERAND_COUNT"},
+		{"percentage too many operands", op("%", lit("1"), lit("2")), "INVALID_OPERAND_COUNT"},
+		{"exponentiation too few operands", op("^", lit("2")), "INVALID_OPERAND_COUNT"},
+		{"exponentiation too many operands", op("^", lit("2"), lit("3"), lit("4")), "INVALID_OPERAND_COUNT"},
 		{"bare Infinity literal is rejected as out of range", lit("Infinity"), "RESULT_OUT_OF_RANGE"},
 		{"bare NaN literal is rejected as out of range", lit("NaN"), "RESULT_OUT_OF_RANGE"},
 		{"literal overflowing float64 is out of range, not invalid", lit("1e400"), "RESULT_OUT_OF_RANGE"},

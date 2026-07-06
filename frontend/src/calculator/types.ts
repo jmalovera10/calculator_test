@@ -1,4 +1,6 @@
-export type Operator = '+' | '-' | '*' | '/'
+export type Operator = '+' | '-' | '*' | '/' | '^'
+
+export type UnaryOperator = 'sqrt' | '%'
 
 export interface CalculatorState {
   currentOperand: string
@@ -29,3 +31,4 @@ export type Action =
   | { type: 'EVAL_START' }
   | { type: 'EVAL_SUCCESS'; result: string }
   | { type: 'EVAL_ERROR'; code: string; message: string }
+  | { type: 'UNARY_EVAL_SUCCESS'; result: string }

@@ -62,7 +62,7 @@ func TestCreate_Errors(t *testing.T) {
 	}{
 		{"malformed json", `{"expression": `, http.StatusBadRequest, "INVALID_JSON"},
 		{"missing expression field", `{}`, http.StatusBadRequest, "INVALID_JSON"},
-		{"unknown operator", `{"expression": {"^": ["2", "3"]}}`, http.StatusBadRequest, "UNKNOWN_OPERATOR"},
+		{"unknown operator", `{"expression": {"@": ["2", "3"]}}`, http.StatusBadRequest, "UNKNOWN_OPERATOR"},
 		{"wrong operand count", `{"expression": {"+": ["1"]}}`, http.StatusBadRequest, "INVALID_OPERAND_COUNT"},
 		{"unparsable number", `{"expression": {"+": ["abc", "1"]}}`, http.StatusBadRequest, "INVALID_NUMBER"},
 		{"division by zero", `{"expression": {"/": ["5", "0"]}}`, http.StatusBadRequest, "DIVISION_BY_ZERO"},

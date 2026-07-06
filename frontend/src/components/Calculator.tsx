@@ -3,7 +3,8 @@ import { Display } from './Display'
 import { Keypad } from './Keypad'
 
 export function Calculator() {
-  const { state, pressDigit, pressDecimalPoint, pressOperator, pressEquals, pressClear } = useCalculator()
+  const { state, pressDigit, pressDecimalPoint, pressOperator, pressEquals, pressClear, pressUnaryOperator } =
+    useCalculator()
 
   return (
     <div className="mx-auto w-full max-w-sm overflow-hidden rounded-2xl bg-slate-800 shadow-xl">
@@ -12,6 +13,7 @@ export function Calculator() {
         onDigit={pressDigit}
         onDecimalPoint={pressDecimalPoint}
         onOperator={pressOperator}
+        onUnaryOperator={pressUnaryOperator}
         onEquals={pressEquals}
         onClear={pressClear}
         disabled={state.isLoading}

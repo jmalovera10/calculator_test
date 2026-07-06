@@ -118,4 +118,80 @@ describe('Calculator', () => {
     await waitFor(() => expect(display()).toHaveTextContent('6'))
     expect(screen.getByRole('button', { name: '2' })).not.toBeDisabled()
   })
+
+  it('computes the square root of the current operand immediately on press', async () => {
+    const user = userEvent.setup()
+    mockedEvaluate.mockResolvedValueOnce('3')
+    render(<Calculator />)
+
+    await user.click(screen.getByRole('button', { name: '9' }))
+    await user.click(screen.getByRole('button', { name: '√' }))
+
+    await waitFor(() => expect(display()).toHaveTextContent('3'))
+    expect(mockedEvaluate).toHaveBeenCalledWith({ sqrt: ['9'] })
+  })
+
+  it('computes a percentage of the current operand immediately on press', async () => {
+    const user = userEvent.setup()
+    mockedEvaluate.mockResolvedValueOnce('0.5')
+    render(<Calculator />)
+
+    await user.click(screen.getByRole('button', { name: '5' }))
+    await user.click(screen.getByRole('button', { name: '0' }))
+    await user.click(screen.getByRole('button', { name: '%' }))
+
+    await waitFor(() => expect(display()).toHaveTextContent('0.5'))
+    expect(mockedEvaluate).toHaveBeenCalledWith({ '%': ['50'] })
+  })
+
+  it('computes exponentiation via the ^ key', async () => {
+    const user = userEvent.setup()
+    mockedEvaluate.mockResolvedValueOnce('256')
+    render(<Calculator />)
+
+    await user.click(screen.getByRole('button', { name: '2' }))
+    await user.click(screen.getByRole('button', { name: '^' }))
+    await user.click(screen.getByRole('button', { name: '8' }))
+    await user.click(screen.getByRole('button', { name: '=' }))
+
+    await waitFor(() => expect(display()).toHaveTextContent('256'))
+    expect(mockedEvaluate).toHaveBeenCalledWith({ '^': ['2', '8'] })
+  })
+
+  it('surfaces a negative-square-root error via role=alert', async () => {
+    const user = userEvent.setup()
+    mockedEvaluate.mockResolvedValueOnce('-5')
+    render(<Calculator />)
+
+    await user.click(screen.getByRole('button', { name: '4' }))
+    await user.click(screen.getByRole('button', { name: '-' }))
+    await user.click(screen.getByRole('button', { name: '9' }))
+    await user.click(screen.getByRole('button', { name: '=' }))
+    await waitFor(() => expect(display()).toHaveTextContent('-5'))
+
+    mockedEvaluate.mockRejectedValueOnce(new ApiError('NEGATIVE_SQRT', 'cannot take the square root of a negative number'))
+    await user.click(screen.getByRole('button', { name: '√' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('cannot take the square root of a negative number')
+  })
+
+  it('preserves a pending binary chain through an intervening unary operator: 12 + √9 = 15', async () => {
+    const user = userEvent.setup()
+    mockedEvaluate.mockResolvedValueOnce('3')
+    render(<Calculator />)
+
+    await user.click(screen.getByRole('button', { name: '1' }))
+    await user.click(screen.getByRole('button', { name: '2' }))
+    await user.click(screen.getByRole('button', { name: '+' }))
+    await user.click(screen.getByRole('button', { name: '9' }))
+    await user.click(screen.getByRole('button', { name: '√' }))
+
+    await waitFor(() => expect(display()).toHaveTextContent('12 + 3'))
+
+    mockedEvaluate.mockResolvedValueOnce('15')
+    await user.click(screen.getByRole('button', { name: '=' }))
+
+    await waitFor(() => expect(display()).toHaveTextContent('15'))
+    expect(mockedEvaluate).toHaveBeenLastCalledWith({ '+': ['12', '3'] })
+  })
 })

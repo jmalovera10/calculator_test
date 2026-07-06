@@ -1,19 +1,39 @@
-import type { Operator } from '../calculator/types'
+import type { Operator, UnaryOperator } from '../calculator/types'
 import { Key } from './Key'
 
 interface KeypadProps {
   onDigit: (digit: string) => void
   onDecimalPoint: () => void
   onOperator: (operator: Operator) => void
+  onUnaryOperator: (operator: UnaryOperator) => void
   onEquals: () => void
   onClear: () => void
   disabled?: boolean
 }
 
-export function Keypad({ onDigit, onDecimalPoint, onOperator, onEquals, onClear, disabled = false }: KeypadProps) {
+export function Keypad({
+  onDigit,
+  onDecimalPoint,
+  onOperator,
+  onUnaryOperator,
+  onEquals,
+  onClear,
+  disabled = false,
+}: KeypadProps) {
   return (
     <div className="grid grid-cols-4 gap-2 p-4">
-      <Key variant="clear" className="col-span-4" disabled={disabled} onClick={onClear}>
+      
+
+      <Key variant="operator" disabled={disabled} onClick={() => onUnaryOperator('sqrt')}>
+        √
+      </Key>
+      <Key variant="operator" disabled={disabled} onClick={() => onUnaryOperator('%')}>
+        %
+      </Key>
+      <Key variant="operator" disabled={disabled} onClick={() => onOperator('^')}>
+        ^
+      </Key>
+      <Key variant="clear" disabled={disabled} onClick={onClear}>
         C
       </Key>
 
