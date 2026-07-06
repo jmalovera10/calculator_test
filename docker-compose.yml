@@ -1,0 +1,28 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  # Cross-service Playwright suite (docs/implementation-plan.md §3). Only runs
+  # when explicitly requested, so a plain `docker compose up` just serves the
+  # app: `docker compose --profile e2e up --build --abort-on-container-exit --exit-code-from e2e`
+  e2e:
+    profiles: ["e2e"]
+    build:
+      context: .
+      dockerfile: e2e/Dockerfile
+    environment:
+      PLAYWRIGHT_BASE_URL: http://frontend:80
+    depends_on:
+      - backend
+      - frontend
+    volumes:
+      - ./playwright-report:/e2e/playwright-report
